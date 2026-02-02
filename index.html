@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will You Be My Valentine?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #fff5f7;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cursive {
+            font-family: 'Dancing Script', cursive;
+        }
+
+        #main-container {
+            position: relative;
+            transition: height 0.3s ease;
+            z-index: 10;
+        }
+
+        /* --- Runaway Button CSS --- */
+        #no-button {
+            transition: all 0.2s ease-out;
+            z-index: 50;
+        }
+
+        /* --- Background Hearts Animation --- */
+        .heart {
+            position: absolute;
+            color: #ff4d6d;
+            font-size: 20px;
+            pointer-events: none;
+            animation: float 4s linear forwards;
+            z-index: 0; 
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* --- Flower Rain Animation --- */
+        .falling-flower {
+            position: fixed;
+            top: -50px;
+            font-size: 24px;
+            pointer-events: none;
+            animation: fallDown 3s linear forwards;
+            z-index: 50;
+        }
+        @keyframes fallDown {
+            to { transform: translateY(110vh) rotate(360deg); }
+        }
+
+        /* --- Fish Swim Animation --- */
+        .swimming-fish {
+            position: fixed;
+            top: 50%;
+            font-size: 30px;
+            pointer-events: none;
+            z-index: 50;
+            visibility: hidden; 
+        }
+        .swim-right { 
+            visibility: visible;
+            animation: swimRight 3s linear both; 
+        }
+        .swim-left { 
+            visibility: visible;
+            animation: swimLeft 3s linear both; 
+        }
+
+        @keyframes swimRight {
+            from { left: -50px; transform: scaleX(1); }
+            to { left: 110vw; transform: scaleX(1); }
+        }
+        @keyframes swimLeft {
+            from { left: 110vw; transform: scaleX(-1); }
+            to { left: -50px; transform: scaleX(-1); }
+        }
+
+        .container-box {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #ffccd5;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+
+        /* --- Game Specific Styles --- */
+        .game-btn {
+            transition: transform 0.1s;
+        }
+        .game-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Catch Game Targets */
+        .catch-item {
+            position: absolute;
+            font-size: 2rem;
+            cursor: pointer;
+            animation: popIn 0.3s ease-out;
+            user-select: none;
+            z-index: 20;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Scavenger Hunt Items */
+        .hidden-item {
+            position: absolute;
+            font-size: 2rem; /* Made letters slightly bigger for easier clicking */
+            cursor: pointer;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+            transition: all 0.3s;
+            animation: bounce 2s infinite;
+            z-index: 20;
+        }
+        .hidden-item:hover {
+            transform: scale(1.2) rotate(10deg);
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Letter Modal Styles */
+        .letter-modal {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 245, 247, 0.95); /* Slightly more opaque for readability */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            border-radius: 1.5rem; /* Matches container rounded-3xl */
+            animation: fadeIn 0.3s ease;
+        }
+        .letter-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 85%;
+            text-align: center;
+            border: 2px solid #fecdd3;
+            box-shadow: 0 10px 25px rgba(255, 182, 193, 0.3);
+            animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-origin: center;
+            max-height: 90%;
+            overflow-y: auto; /* Allow scrolling if text gets too long */
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+    </style>
+</head>
+<body class="m-0 p-4">
+
+    <!-- Main Container -->
+    <div id="main-container" class="container-box max-w-lg w-full p-6 md:p-8 rounded-3xl shadow-xl text-center min-h-[450px] flex flex-col justify-center items-center">
+        
+        <!-- 1. LOGIN STATE -->
+        <div id="login-state" class="w-full flex flex-col items-center">
+            <div class="text-5xl mb-4">🔒</div>
+            <h1 class="cursive text-4xl md:text-5xl text-pink-600 mb-2">Login with Love</h1>
+            <p class="text-gray-400 mb-6 text-sm">When did we first meet?</p>
+            
+            <input type="text" id="password-input" placeholder="DDMMYYYY" maxlength="8"
+                class="bg-pink-50 border-2 border-pink-200 text-pink-600 text-center text-xl rounded-full py-2 px-6 mb-4 w-64 placeholder-pink-200 focus:bg-white focus:border-pink-500 focus:outline-none transition-colors">
+            
+            <button id="login-btn"
+                class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-8 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 text-lg">
+                Enter ❤️
+            </button>
+            <p id="error-msg" class="text-red-400 text-sm mt-4 hidden animate-pulse">Oops! Wrong date. Try again 😢</p>
+        </div>
+
+        <!-- 2. ASK STATE -->
+        <div id="ask-state" class="w-full hidden relative">
+            <div id="heart-icon" class="text-6xl mb-4 md:mb-6 animate-pulse">💖</div>
+            <h1 id="question-text" class="cursive text-4xl md:text-5xl text-pink-600 mb-6 md:mb-8 leading-tight">Will you be my Valentine?</h1>
+            
+            <div class="w-full min-h-[80px] flex flex-wrap items-center justify-center gap-4 md:gap-8 mt-4">
+                <button id="yes-button" 
+                    class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 md:px-10 rounded-full shadow-lg transform transition hover:scale-110 active:scale-95 text-lg md:text-xl z-10">
+                    Yes!
+                </button>
+                <button id="no-button" 
+                    class="bg-gray-200 text-gray-600 font-bold py-3 px-8 md:px-10 rounded-full shadow-md text-lg md:text-xl cursor-default whitespace-nowrap">
+                    No
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. GAME 1: QUIZ -->
+        <div id="quiz-state" class="w-full hidden">
+            <h2 class="text-pink-500 text-xl font-bold mb-2">Level 1: The Love Quiz</h2>
+            <p class="text-gray-500 mb-6 text-sm">Prove you know me!</p>
+            
+            <div id="quiz-container" class="w-full">
+                <h3 id="quiz-question" class="text-xl text-gray-700 font-bold mb-6">Question here?</h3>
+                <div id="quiz-options" class="flex flex-col gap-3 w-full max-w-xs mx-auto">
+                    <!-- Options or Input injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. GAME 2: CATCH HEARTS -->
+        <div id="catch-state" class="w-full hidden h-full">
+            <h2 class="text-pink-500 text-xl font-bold mb-2">Level 2: Catch My Heart</h2>
+            <p class="text-gray-500 mb-4 text-sm">Tap 10 hearts before time runs out!</p>
+            
+            <div class="w-full bg-gray-200 rounded-full h-4 mb-6">
+                <div id="catch-progress" class="bg-pink-500 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+
+            <div id="catch-area" class="w-full h-64 bg-pink-50 rounded-xl relative overflow-hidden border border-pink-100 shadow-inner cursor-crosshair">
+                <div id="start-catch-msg" class="absolute inset-0 flex items-center justify-center text-gray-400 pointer-events-none">
+                    Get Ready...
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. GAME 3: SCAVENGER HUNT (Updated) -->
+        <div id="scavenger-state" class="w-full hidden h-full relative">
+            <h2 class="text-pink-500 text-xl font-bold mb-2">Level 3: Hidden Letters</h2>
+            <p class="text-gray-500 mb-6 text-sm">Find 3 hidden love letters 💌!</p>
+            
+            <div class="text-2xl font-bold text-pink-600 mb-4">Opened: <span id="found-count">0</span>/3</div>
+
+            <!-- Game Area -->
+            <div id="scavenger-area" class="w-full h-80 bg-white rounded-xl relative border border-gray-100 overflow-hidden shadow-sm">
+                
+                <!-- Your Image -->
+                <img src="game_3.png" alt="Scavenger Hunt Background" class="w-full h-full object-cover">
+                
+                <!-- Hidden Items -->
+                <div class="hidden-item" style="bottom: 10px; right: 10px;" onclick="openLetter(this)">💌</div>
+                <div class="hidden-item" style="top: 15px; right: 20px;" onclick="openLetter(this)">💌</div>
+                <div class="hidden-item" style="bottom: 40px; left: 10px;" onclick="openLetter(this)">💌</div>
+
+                <!-- Letter Modal (Popup) -->
+                <div id="letter-modal" class="hidden letter-modal">
+                    <div class="letter-content">
+                        <div class="text-4xl mb-4">💌</div>
+                        <!-- Changed to innerHTML to support line breaks -->
+                        <div id="letter-text" class="text-xl font-handwriting text-pink-600 font-bold mb-6 cursive leading-relaxed"></div>
+                        <button onclick="closeLetter()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full shadow-md transition transform hover:scale-105">
+                            Keep going ❤️
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 6. CELEBRATION STATE -->
+        <div id="celebration-state" class="hidden w-full">
+            <div class="text-6xl mb-4 animate-bounce">🎉</div>
+            <h1 class="cursive text-4xl md:text-5xl text-pink-600 mb-4">You did it!</h1>
+            <p class="text-pink-400 text-lg mb-6">You are officially my Valentine! ❤️</p>
+            
+            <div class="flex justify-center mb-6">
+                <svg width="150" height="150" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M100 180c-50-40-90-70-90-110 0-30 20-50 50-50 20 0 30 10 40 20 10-10 20-20 40-20 30 0 50 20 50 50 0 40-40 70-90 110z" fill="#ff4d6d">
+                        <animate attributeName="d" 
+                            values="M100 180c-50-40-90-70-90-110 0-30 20-50 50-50 20 0 30 10 40 20 10-10 20-20 40-20 30 0 50 20 50 50 0 40-40 70-90 110z;
+                                    M100 170c-50-40-90-70-90-110 0-30 20-50 50-50 20 0 30 10 40 20 10-10 20-20 40-20 30 0 50 20 50 50 0 40-40 70-90 100z;
+                                    M100 180c-50-40-90-70-90-110 0-30 20-50 50-50 20 0 30 10 40 20 10-10 20-20 40-20 30 0 50 20 50 50 0 40-40 70-90 110z" 
+                            dur="0.8s" repeatCount="indefinite" />
+                    </path>
+                </svg>
+            </div>
+            <p class="text-gray-500 italic">Happy Valentine's Day! 🌹</p>
+        </div>
+    </div>
+
+    <div id="bg-hearts"></div>
+
+    <script>
+        // --- Shared & State Management ---
+        const states = ['login-state', 'ask-state', 'quiz-state', 'catch-state', 'scavenger-state', 'celebration-state'];
+        
+        function switchState(stateId) {
+            states.forEach(id => document.getElementById(id).classList.add('hidden'));
+            document.getElementById(stateId).classList.remove('hidden');
+            
+            // Trigger specific game inits
+            if(stateId === 'quiz-state') loadQuiz();
+            if(stateId === 'catch-state') startCatchGame();
+            if(stateId === 'scavenger-state') startScavenger();
+            if(stateId === 'celebration-state') startHeartRain();
+        }
+
+        // --- 1. Login Logic ---
+        const passwordInput = document.getElementById('password-input');
+        const loginBtn = document.getElementById('login-btn');
+        const errorMsg = document.getElementById('error-msg');
+
+        const checkPassword = () => {
+            if (passwordInput.value.trim() === '22122025') {
+                switchState('ask-state');
+                window.dispatchEvent(new Event('resize')); 
+            } else {
+                errorMsg.classList.remove('hidden');
+                passwordInput.classList.add('border-red-400');
+                setTimeout(() => passwordInput.classList.remove('border-red-400'), 500);
+            }
+        };
+
+        loginBtn.addEventListener('click', checkPassword);
+        passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPassword(); });
+
+        // --- 2. Proposal (Runaway Button) ---
+        const container = document.getElementById('main-container');
+        const noBtn = document.getElementById('no-button');
+        const yesBtn = document.getElementById('yes-button');
+        const heartIcon = document.getElementById('heart-icon');
+        const questionText = document.getElementById('question-text');
+        
+        let hasMoved = false;
+
+        const moveButton = (e) => {
+            if (document.getElementById('ask-state').classList.contains('hidden')) return;
+
+            const containerRect = container.getBoundingClientRect();
+            const btnRect = noBtn.getBoundingClientRect();
+            const yesRect = yesBtn.getBoundingClientRect();
+            const heartRect = heartIcon.getBoundingClientRect();
+            const textRect = questionText.getBoundingClientRect();
+
+            // Initial transition to absolute
+            if (!hasMoved) {
+                const initialLeft = btnRect.left - containerRect.left;
+                const initialTop = btnRect.top - containerRect.top;
+                noBtn.style.left = `${initialLeft}px`;
+                noBtn.style.top = `${initialTop}px`;
+                noBtn.style.position = 'absolute';
+                hasMoved = true;
+            }
+
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            const mouseX = clientX - containerRect.left;
+            const mouseY = clientY - containerRect.top;
+            
+            const safeRadius = 120;
+            const padding = 20; // Keep button inside edges
+
+            // Collision check helper
+            const checkCollision = (x, y, targetRect, pad) => {
+                const targetLeft = targetRect.left - containerRect.left;
+                const targetTop = targetRect.top - containerRect.top;
+                return (
+                    x < targetLeft + targetRect.width + pad &&
+                    x + btnRect.width > targetLeft - pad &&
+                    y < targetTop + targetRect.height + pad &&
+                    y + btnRect.height > targetTop - pad
+                );
+            };
+
+            // Attempt to find a valid position
+            const findSpot = (strictMode) => {
+                for (let i = 0; i < 40; i++) {
+                    const maxX = containerRect.width - btnRect.width - padding;
+                    const maxY = containerRect.height - btnRect.height - padding;
+                    
+                    const randX = Math.max(padding, Math.random() * maxX);
+                    const randY = Math.max(padding, Math.random() * maxY);
+                    const distToMouse = Math.hypot(randX - mouseX, randY - mouseY);
+                    
+                    const overlapsYes = checkCollision(randX, randY, yesRect, 10);
+                    
+                    let isValid = distToMouse > safeRadius && !overlapsYes;
+
+                    if (strictMode) {
+                        const overlapsHeart = checkCollision(randX, randY, heartRect, 10);
+                        const overlapsText = checkCollision(randX, randY, textRect, 10);
+                        isValid = isValid && !overlapsHeart && !overlapsText;
+                    }
+
+                    if (isValid) {
+                        noBtn.style.left = `${randX}px`;
+                        noBtn.style.top = `${randY}px`;
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            if (findSpot(true)) return;
+            if (findSpot(false)) return;
+
+            const farX = mouseX < containerRect.width / 2 ? containerRect.width - btnRect.width - padding : padding;
+            const farY = mouseY < containerRect.height / 2 ? containerRect.height - btnRect.height - padding : padding;
+            noBtn.style.left = `${farX}px`;
+            noBtn.style.top = `${farY}px`;
+        };
+
+        noBtn.addEventListener('mouseover', moveButton);
+        noBtn.addEventListener('touchstart', (e) => { e.preventDefault(); moveButton(e); });
+        yesBtn.addEventListener('click', () => { switchState('quiz-state'); });
+
+        // --- 3. Game 1: Quiz Logic ---
+        const quizData = [
+            {
+                q: "Where did we first meet?", // Updated text
+                type: "input",
+                validate: (val) => {
+                    const clean = val.toLowerCase().trim();
+                    const validAnswers = [
+                        "baku", "razin", "at razin", "at my work", "my work", "work", "72 school", "school 72", "72"
+                    ];
+                    return validAnswers.some(ans => clean.includes(ans) || clean === ans);
+                }
+            },
+            {
+                q: "What's our word?",
+                type: "input",
+                validate: (val) => {
+                    const clean = val.trim();
+                    return clean.length >= 2 && clean.length <= 10 && /^[Ee]+$/.test(clean);
+                }
+            },
+            {
+                q: "Who loves who more?",
+                type: "input",
+                validate: (val) => {
+                    const clean = val.toLowerCase().trim();
+                    return /\b(i|me|myself|you|u|yourself|both|equal|same|us|we)\b/.test(clean);
+                }
+            }
+        ];
+
+        let currentQuiz = 0;
+
+        function loadQuiz() {
+            if (currentQuiz >= quizData.length) {
+                switchState('catch-state');
+                return;
+            }
+            const data = quizData[currentQuiz];
+            document.getElementById('quiz-question').innerText = data.q;
+            const optsDiv = document.getElementById('quiz-options');
+            optsDiv.innerHTML = '';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = "bg-pink-50 border-2 border-pink-200 text-pink-600 text-center text-xl rounded-full py-2 px-6 mb-4 w-full placeholder-pink-200 focus:bg-white focus:border-pink-500 focus:outline-none transition-colors";
+            input.placeholder = "Type it here...";
+            
+            const btn = document.createElement('button');
+            btn.className = "bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-8 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 text-lg block mx-auto";
+            btn.innerText = "Submit";
+            
+            const errorMsg = document.createElement('p');
+            errorMsg.className = "text-red-400 text-sm mt-3 hidden font-medium animate-bounce";
+            errorMsg.innerText = "You're close, try again! 🥺";
+
+            const handleSubmit = () => {
+                if (data.validate(input.value)) {
+                    currentQuiz++;
+                    loadQuiz();
+                } else {
+                    input.classList.add('border-red-400', 'animate-pulse');
+                    errorMsg.classList.remove('hidden'); 
+                    setTimeout(() => input.classList.remove('border-red-400', 'animate-pulse'), 500);
+                }
+            };
+
+            btn.onclick = handleSubmit;
+            input.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSubmit(); });
+            input.addEventListener('input', () => { errorMsg.classList.add('hidden'); });
+
+            optsDiv.appendChild(input);
+            optsDiv.appendChild(btn);
+            optsDiv.appendChild(errorMsg);
+            
+            setTimeout(() => input.focus(), 100);
+        }
+
+        // --- 4. Game 2: Catch Hearts ---
+        let catchState = { hearts: 0, flowers: 0, fish: 0, phase: 'hearts' };
+        const targetHearts = 10;
+        let catchInterval;
+
+        function startCatchGame() {
+            const msg = document.getElementById('start-catch-msg');
+            catchState = { hearts: 0, flowers: 0, fish: 0, phase: 'hearts' };
+            updateCatchProgress();
+            
+            setTimeout(() => {
+                msg.style.display = 'none';
+                catchInterval = setInterval(gameTick, 600); 
+            }, 1000);
+        }
+
+        function gameTick() {
+            const area = document.getElementById('catch-area');
+            
+            if (catchState.phase === 'hearts') {
+                spawnItem(area, '💖', () => {
+                    catchState.hearts++;
+                    updateCatchProgress();
+                    
+                    if (catchState.hearts === 5) {
+                        catchState.phase = 'flowers';
+                        clearItems();
+                    }
+                    else if (catchState.hearts === 9) {
+                        catchState.phase = 'fish';
+                        clearItems();
+                    }
+                    else if (catchState.hearts >= targetHearts) {
+                        clearInterval(catchInterval);
+                        setTimeout(() => switchState('scavenger-state'), 500);
+                    }
+                });
+            }
+            else if (catchState.phase === 'flowers') {
+                const flowers = ['🌸', '🌺', '🌻', '🌹', '🌷'];
+                spawnItem(area, flowers[Math.floor(Math.random() * flowers.length)], () => {
+                    catchState.flowers++;
+                    triggerFlowerRain();
+                    if (catchState.flowers >= 5) {
+                        catchState.phase = 'hearts';
+                        clearItems();
+                    }
+                });
+            }
+            else if (catchState.phase === 'fish') {
+                const fishes = ['🐟', '🐠', '🐡'];
+                spawnItem(area, fishes[Math.floor(Math.random() * fishes.length)], () => {
+                    catchState.fish++;
+                    const direction = catchState.fish === 1 ? 'right' : 'left';
+                    triggerFishCrowd(direction); 
+                    if (catchState.fish >= 2) {
+                        catchState.phase = 'hearts';
+                        clearItems();
+                    }
+                });
+            }
+        }
+
+        function spawnItem(area, emoji, clickCallback) {
+            const item = document.createElement('div');
+            item.className = 'catch-item';
+            item.innerText = emoji;
+            const maxLeft = area.offsetWidth - 40;
+            const maxTop = area.offsetHeight - 40;
+            item.style.left = Math.random() * maxLeft + 'px';
+            item.style.top = Math.random() * maxTop + 'px';
+            item.onclick = (e) => {
+                e.stopPropagation();
+                item.remove();
+                clickCallback();
+            };
+            setTimeout(() => { if(item.parentNode) item.remove(); }, 1500);
+            area.appendChild(item);
+        }
+
+        function clearItems() {
+            document.querySelectorAll('.catch-item').forEach(el => el.remove());
+        }
+
+        function updateCatchProgress() {
+            const pct = (catchState.hearts / targetHearts) * 100;
+            document.getElementById('catch-progress').style.width = `${pct}%`;
+        }
+
+        function triggerFlowerRain() {
+            const count = 80;
+            for(let i=0; i<count; i++) {
+                const f = document.createElement('div');
+                f.className = 'falling-flower';
+                f.innerText = ['🌸', '🌺', '🌻', '🌹', '🌷'][Math.floor(Math.random()*5)];
+                f.style.left = Math.random() * 100 + 'vw';
+                f.style.animationDuration = (2.5 + Math.random() * 3) + 's';
+                f.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(f);
+                setTimeout(() => f.remove(), 6000);
+            }
+        }
+
+        function triggerFishCrowd(direction) {
+            const count = 60;
+            for(let i=0; i<count; i++) {
+                const f = document.createElement('div');
+                f.className = `swimming-fish ${direction === 'right' ? 'swim-right' : 'swim-left'}`;
+                f.innerText = ['🐟', '🐠', '🐡'][Math.floor(Math.random()*3)];
+                f.style.top = (Math.random() * 100) + 'vh';
+                f.style.animationDuration = (3 + Math.random() * 4) + 's';
+                f.style.animationDelay = Math.random() * 1.5 + 's';
+                document.body.appendChild(f);
+                setTimeout(() => f.remove(), 8000);
+            }
+        }
+
+        // --- 5. Game 3: Scavenger Hunt (Updated Logic) ---
+        let itemsFound = 0;
+        let currentLetterElement = null; // Track which letter was clicked to hide it later
+
+        // Ordered messages for 1st, 2nd, and 3rd letter clicked
+        const letterMessages = [
+            "Ne yaxşı ki varsan",           // 1st click
+            "Ne yaxşı ki eeee? dedin",      // 2nd click
+            "Happy valentines day 🤍"       // 3rd click
+        ];
+
+        function startScavenger() {
+            itemsFound = 0;
+            document.getElementById('found-count').innerText = '0';
+            document.querySelectorAll('.hidden-item').forEach(el => el.style.display = 'block');
+        }
+
+        // Triggered when a letter is clicked
+        window.openLetter = function(element) {
+            if (element.style.display === 'none') return;
+            
+            currentLetterElement = element;
+            
+            // Build the cumulative message
+            // Get all messages from index 0 up to current itemsFound
+            const currentMessages = letterMessages.slice(0, itemsFound + 1);
+            
+            // Join them with line breaks for spacing
+            document.getElementById('letter-text').innerHTML = currentMessages.join('<br><br>');
+            
+            // Show Modal
+            document.getElementById('letter-modal').classList.remove('hidden');
+        };
+
+        // Triggered when "Keep going" is clicked in modal
+        window.closeLetter = function() {
+            // Hide Modal
+            document.getElementById('letter-modal').classList.add('hidden');
+            
+            if (currentLetterElement) {
+                // Hide the letter on the map
+                currentLetterElement.style.display = 'none';
+                
+                // Increment score
+                itemsFound++;
+                document.getElementById('found-count').innerText = itemsFound;
+                
+                // Visual effect at letter position
+                const yay = document.createElement('div');
+                yay.innerText = '✨';
+                yay.style.position = 'absolute';
+                yay.style.left = currentLetterElement.style.left;
+                yay.style.top = currentLetterElement.style.top;
+                yay.className = 'text-2xl animate-ping';
+                document.getElementById('scavenger-area').appendChild(yay);
+                
+                // Reset tracker
+                currentLetterElement = null;
+
+                // Check Win Condition
+                if (itemsFound >= 3) {
+                    setTimeout(() => switchState('celebration-state'), 800);
+                }
+            }
+        };
+
+        // --- Background Animation ---
+        const bgHearts = document.getElementById('bg-hearts');
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart');
+            heart.innerHTML = ['❤️', '💖', '💝', '💕', '🌸'][Math.floor(Math.random() * 5)];
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.top = '100vh';
+            heart.style.fontSize = Math.random() * 20 + 20 + 'px';
+            heart.style.animationDuration = Math.random() * 2 + 2 + 's';
+            bgHearts.appendChild(heart);
+            setTimeout(() => heart.remove(), 4000);
+        }
+        function startHeartRain() {
+            setInterval(createHeart, 150);
+        }
+
+        window.addEventListener('resize', () => {
+             noBtn.style.position = 'static';
+             hasMoved = false;
+        });
+
+    </script>
+</body>
+</html>
