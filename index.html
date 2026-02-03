@@ -70,6 +70,14 @@
         }
         .jumpy-btn { animation: jumpy 2s infinite; display: inline-block; }
 
+        /* Coordinates Hover Effect */
+        .coord-link:hover {
+            transform: scale(1.05);
+            background-color: #eff6ff; /* blue-50 */
+            border-color: #60a5fa; /* blue-400 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
         /* --- SECRET GAMES CSS --- */
         .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; width: 100%; max-width: 320px; margin: 0 auto; }
         .memory-card { aspect-ratio: 1; background: #fce7f3; border-radius: 0.5rem; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; cursor: pointer; transition: transform 0.3s, background 0.3s; transform-style: preserve-3d; }
@@ -91,8 +99,13 @@
 </head>
 <body class="m-0 p-4">
 
-    <!-- BACKGROUND MUSIC -->
+    <!-- AUDIO ASSETS -->
     <audio id="bg-music" src="background_music.mp3" loop></audio>
+    <!-- New Sound Effects Files -->
+    <audio id="sfx-pop" src="pop.mp3"></audio>
+    <audio id="sfx-chime" src="chime.mp3"></audio>
+    <audio id="sfx-success" src="success.mp3"></audio>
+    <audio id="sfx-error" src="error.mp3"></audio>
 
     <div id="main-container" class="container-box max-w-lg w-full p-6 md:p-8 rounded-3xl shadow-xl text-center min-h-[450px] flex flex-col justify-center items-center">
         
@@ -173,9 +186,11 @@
                     Wait, there is one more thing...
                 </button>
                 <div id="secret-instruction" class="hidden mt-4 bg-pink-50 p-4 rounded-xl border border-pink-200 shadow-inner animate-fade-in">
-                    <p class="text-gray-600 text-sm mb-2">Refresh the page and log in with this code:</p>
+                    <p class="text-gray-600 text-sm mb-2">Go back to the start and log in with this code:</p>
                     <div class="text-2xl font-bold text-pink-600 tracking-widest font-mono bg-white inline-block px-4 py-2 rounded-lg border border-pink-100 select-all">09122002</div>
-                    <p class="text-xs text-gray-400 mt-2">(Use it on the first screen!)</p>
+                    <div class="mt-4">
+                        <button onclick="resetToLogin()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full shadow-md text-sm transition transform hover:scale-105">Go to Login</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -224,8 +239,8 @@
                 <div class="bg-gray-100 p-2 rounded mb-4 text-xs text-gray-500">
                     Examples:<br>050420261500<br>05.04.2026 15:00
                 </div>
-                <!-- Changed to reload page for login -->
-                <button onclick="location.reload()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-full shadow-lg text-lg animate-pulse">Back to Login 🔄</button>
+                <!-- UPDATED: Uses function to reset without reload -->
+                <button onclick="resetToLogin()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-full shadow-lg text-lg animate-pulse">Back to Login 🔄</button>
             </div>
         </div>
 
@@ -245,13 +260,20 @@
 
             <!-- Final Win Modal -->
             <div id="tower-win" class="hidden absolute inset-0 bg-white/95 flex flex-col justify-center items-center z-50 rounded-3xl p-6 text-center">
-                <div class="text-6xl mb-4">📍</div>
-                <h2 class="text-3xl text-blue-600 font-bold mb-2">Coordinates Revealed!</h2>
-                <p class="text-gray-500 mb-4">Our date location:</p>
-                <div class="text-xl font-mono bg-blue-50 px-4 py-3 rounded-xl text-blue-800 mb-6 border-2 border-blue-200 select-all">
+                <div class="text-6xl mb-4 animate-bounce">📍</div>
+                <h2 class="text-3xl text-blue-600 font-bold mb-4">Coordinates Revealed!</h2>
+                
+                <!-- CLICKABLE COORDINATES -->
+                <a href="https://www.google.com/maps/search/?api=1&query=40.351344,49.848197" target="_blank" 
+                   class="coord-link block text-xl font-mono bg-blue-50 text-blue-600 px-6 py-4 rounded-xl border-2 border-blue-200 mb-6 transition-all duration-300 no-underline">
                     40.351344, 49.848197
-                </div>
-                <p class="text-sm text-gray-400">Can't wait to see you there! ❤️</p>
+                    <div class="text-xs text-blue-400 mt-2 font-sans">(Click to open Maps)</div>
+                </a>
+                
+                <p class="text-sm text-gray-400 mb-6">Can't wait to see you there! ❤️</p>
+                
+                <!-- RETURN BUTTON -->
+                <button onclick="resetToLogin()" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-full shadow text-sm transition">Back to Start</button>
             </div>
         </div>
 
@@ -260,33 +282,21 @@
     <div id="bg-hearts"></div>
 
     <script>
-        // --- AUDIO SYSTEM ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function resumeAudio() { if (audioCtx.state === 'suspended') audioCtx.resume(); }
-        function playSound(type) {
-            resumeAudio();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
-            if (type === 'pop') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.1); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'chime') {
-                osc.type = 'triangle'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(600, now + 0.1); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5);
-            } else if (type === 'success') {
-                [440, 554, 659].forEach((freq, i) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.value = freq; g.gain.setValueAtTime(0.05, now + i*0.1); g.gain.exponentialRampToValueAtTime(0.001, now + i*0.1 + 1); o.start(now + i*0.1); o.stop(now + i*0.1 + 1); });
-            } else if (type === 'error') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(100, now + 0.2); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2);
-            }
-        }
-
-        // --- MUSIC CONTROL ---
+        // --- AUDIO SYSTEM (Updated to use Files) ---
         function playMusic() {
             const music = document.getElementById('bg-music');
             if (music.paused) {
-                music.volume = 0.60;
+                music.volume = 0.25;
                 music.play().catch(e => console.log("Music blocked until interaction"));
+            }
+        }
+
+        function playSound(type) {
+            const sound = document.getElementById('sfx-' + type);
+            if (sound) {
+                sound.volume = 0.6; // 60% Volume for SFX
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("Sound play prevented"));
             }
         }
 
@@ -303,15 +313,23 @@
             if(stateId === 'secret-game-1') startMemoryGame();
         }
 
+        // --- RESET WITHOUT RELOAD (Keeps music playing) ---
+        function resetToLogin() {
+            document.getElementById('secret-win-1').classList.add('hidden');
+            document.getElementById('secret-win-2').classList.add('hidden');
+            document.getElementById('tower-win').classList.add('hidden');
+            document.getElementById('password-input').value = '';
+            document.getElementById('error-msg').classList.add('hidden');
+            switchState('login-state');
+        }
+
         // --- LOGIN LOGIC ---
         const passwordInput = document.getElementById('password-input');
         const loginBtn = document.getElementById('login-btn');
         const errorMsg = document.getElementById('error-msg');
         const checkPassword = () => {
-            resumeAudio();
             playMusic();
             const val = passwordInput.value.trim();
-            // Passwords for the 3rd Page (Tower Game)
             const towerPasswords = ["050420261500", "05.04.2026 15:00", "05.04.2026-15:00", "05.04.2026.15.00"];
 
             if (val === '22122025') { switchState('ask-state'); window.dispatchEvent(new Event('resize')); } 
@@ -469,7 +487,7 @@
         }
         function loadSecretGame2() { document.getElementById('secret-win-1').classList.add('hidden'); document.getElementById('secret-game-1').classList.add('hidden'); document.getElementById('secret-game-2').classList.remove('hidden'); initLockGame(); }
 
-        // --- SECRET GAME 2: LOVE LOCK (SLOWED DOWN FINAL STAGE) ---
+        // --- SECRET GAME 2: LOVE LOCK ---
         let lockAnim, lockLevel = 1, lockSpeed = 2;
         function initLockGame() {
             const cursor = document.getElementById('lock-cursor'); const target = document.getElementById('lock-target');
